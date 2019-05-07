@@ -331,9 +331,10 @@ class SearchUIFragment extends BaseFragment[SearchUIFragment.Container]
         case Some(user) =>
           import ConnectionStatus._
           keyboard.hideKeyboardIfVisible()
-          if (user.connection == Accepted || (user.connection == Unconnected && z.teamId.isDefined && z.teamId == user.teamId))
+          if (user.connection == Accepted || (user.connection == Unconnected && z.teamId.isDefined && z.teamId == user.teamId)) {
+            verbose(l"Opening conversation with user $userId")
             userAccountsController.getOrCreateAndOpenConvFor(userId)
-          else {
+          } else {
             Future { user.connection match {
               case PendingFromUser | Blocked | Ignored | Cancelled | Unconnected =>
                 convScreenController.setPopoverLaunchedMode(DialogLaunchMode.SEARCH)
