@@ -1,4 +1,6 @@
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-android'
 apply plugin: 'jp.leafytree.android-scala'
 apply from: 'deflake.gradle'
 
@@ -124,6 +126,10 @@ dependencies {
     testImplementation "androidx.legacy:legacy-support-v4:1.0.0"
     testImplementation BuildDependencies.threetenbpJava
     testImplementation "net.java.dev.jna:jna:4.4.0@aar"
+    testImplementation BuildDependencies.androidX.coreKtx
+    testImplementation BuildDependencies.kotlin.standardLibrary
+    testImplementation BuildDependencies.kotlin.coroutinesCore
+    testImplementation TestDependencies.kotlin.coroutinesTest
 
     implementation "androidx.sqlite:sqlite:2.0.1"
     implementation "androidx.sqlite:sqlite-framework:2.0.1"

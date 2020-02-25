@@ -20,7 +20,7 @@ package com.waz.utils.wrappers
 import java.io.Closeable
 
 import android.content.ContentValues
-import android.database.sqlite.{SQLiteDatabase, SQLiteSession}
+import android.database.sqlite.SQLiteDatabase
 import androidx.sqlite.db.{SupportSQLiteDatabase, SupportSQLiteQueryBuilder}
 
 import scala.language.implicitConversions
