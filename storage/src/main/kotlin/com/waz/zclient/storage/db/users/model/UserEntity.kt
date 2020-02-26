@@ -16,77 +16,77 @@ data class UserEntity(
     val id: String,
 
     @ColumnInfo(name = "teamId")
-    var teamId: String?,
+    var teamId: String? = null,
 
     @ColumnInfo(name = "name")
     var name: String,
 
     @ColumnInfo(name = "email")
-    var email: String?,
+    var email: String? = null,
 
     @ColumnInfo(name = "phone")
-    var phone: String?,
+    var phone: String? = null,
 
     @ColumnInfo(name = "tracking_id")
-    var trackingId: String?,
+    var trackingId: String? = null,
 
     @ColumnInfo(name = "picture")
-    var picture: String?,
+    var picture: String? = null,
 
     @ColumnInfo(name = "accent")
-    var accentId: Int?,
+    var accentId: Int? = null,
 
     @ColumnInfo(name = "skey")
-    var sKey: String?,
+    var sKey: String? = null,
 
     @ColumnInfo(name = "connection")
-    var connection: String?,
+    var connection: String? = null,
 
     @ColumnInfo(name = "conn_timestamp")
-    var connectionTimestamp: Long?,
+    var connectionTimestamp: Long? = null,
 
     @ColumnInfo(name = "conn_msg")
-    var connectionMessage: String?,
+    var connectionMessage: String? = null,
 
     @ColumnInfo(name = "conversation")
-    var conversation: String?,
+    var conversation: String? = null,
 
     @ColumnInfo(name = "relation")
-    var relation: String?,
+    var relation: String,
 
     @ColumnInfo(name = "timestamp")
-    var timestamp: Long?,
+    var timestamp: Long? = null,
 
     @ColumnInfo(name = "verified")
-    var verified: String?,
+    var verified: String,
 
     @ColumnInfo(name = "deleted")
-    val deleted: Int,
+    val deleted: Boolean,
 
     @ColumnInfo(name = "availability")
-    var availability: Int?,
+    var availability: Int? = null,
 
     @ColumnInfo(name = "handle")
-    var handle: String?,
+    var handle: String? = null,
 
     @ColumnInfo(name = "provider_id")
-    var providerId: String?,
+    var providerId: String? = null,
 
     @ColumnInfo(name = "integration_id")
-    var integrationId: String?,
+    var integrationId: String? = null,
 
     @ColumnInfo(name = "expires_at")
-    var expiresAt: Int?,
+    var expiresAt: Int? = null,
 
     @ColumnInfo(name = "managed_by")
-    var managedBy: String?,
+    var managedBy: String? = null,
 
     @ColumnInfo(name = "self_permissions")
-    var selfPermission: Int?,
+    var selfPermission: Int? = null,
 
     @ColumnInfo(name = "copy_permissions")
-    var copyPermission: Int?,
+    var copyPermission: Int? = null,
 
     @ColumnInfo(name = "created_by")
-    var createdBy: String?
+    var createdBy: String? = null
 )

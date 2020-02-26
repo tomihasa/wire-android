@@ -5,8 +5,10 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
+const val CONVERSATIONS_TABLE_NAME = "Conversations"
+
 @Entity(
-    tableName = "Conversations",
+    tableName = CONVERSATIONS_TABLE_NAME,
     indices = [Index(value = ["search_key"])]
 )
 data class ConversationsEntity(
@@ -30,7 +32,7 @@ data class ConversationsEntity(
     val team: String?,
 
     @ColumnInfo(name = "is_managed")
-    val managed: Int?,
+    val managed: Boolean?,
 
     @ColumnInfo(name = "last_event_time")
     val lastEventTime: Int,
@@ -48,13 +50,13 @@ data class ConversationsEntity(
     val muteTime: Int,
 
     @ColumnInfo(name = "archived")
-    val archived: Int,
+    val archived: Boolean,
 
     @ColumnInfo(name = "archive_time")
     val archiveTime: Int,
 
     @ColumnInfo(name = "cleared")
-    val cleared: Int?,
+    val clearedTime: Int?,
 
     @ColumnInfo(name = "generated_name")
     val generatedName: String,
@@ -69,7 +71,7 @@ data class ConversationsEntity(
     val unsentCount: Int,
 
     @ColumnInfo(name = "hidden")
-    val hidden: Int,
+    val hidden: Boolean,
 
     @ColumnInfo(name = "missed_call")
     val missedCall: String?,

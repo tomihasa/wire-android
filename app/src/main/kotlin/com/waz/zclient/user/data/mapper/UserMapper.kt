@@ -15,7 +15,8 @@ class UserMapper {
             phone = phone,
             pictures = pictures,
             accentId = accentId,
-            deleted = deleted,
+            deleted = deleted != 0,
+            verified = "UNKNOWN",
             managedBy = managedBy
         )
     }
@@ -42,7 +43,7 @@ class UserMapper {
             accentId = accentId, sKey = sKey,
             connection = connection, connectionTimestamp = connectionTimestamp,
             connectionMessage = connectionMessage, conversation = conversation, relation = relation,
-            timestamp = timestamp, verified = verified, deleted = deleted!!.toInt(),
+            timestamp = timestamp, verified = verified, deleted = deleted,
             availability = availability, providerId = providerId,
             integrationId = integrationId, expiresAt = expiresAt, managedBy = managedBy,
             selfPermission = selfPermission, copyPermission = copyPermission,

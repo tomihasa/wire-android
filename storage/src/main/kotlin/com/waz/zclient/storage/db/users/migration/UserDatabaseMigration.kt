@@ -3,6 +3,7 @@ package com.waz.zclient.storage.db.users.migration
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.waz.zclient.storage.db.assetsv1.AssetsV1Entity
+import com.waz.zclient.storage.db.conversations.CONVERSATIONS_TABLE_NAME
 
 private const val START_VERSION = 126
 private const val END_VERSION = 127
@@ -35,6 +36,7 @@ val USER_DATABASE_MIGRATION_126_TO_127 = object : Migration(START_VERSION, END_V
         migrateKeyValuesTable(database)
         migrateUserTable(database)
         migrateAssetsV1Table(database)
+        migrateConversationsTable(database)
     }
 
     //TODO still needs determining what to do with this one.
@@ -124,6 +126,31 @@ val USER_DATABASE_MIGRATION_126_TO_127 = object : Migration(START_VERSION, END_V
         val copyAllValues = "INSERT INTO $tempTableName SELECT * FROM ${AssetsV1Entity.TABLE_NAME}"
         val dropOldTable = "DROP TABLE ${AssetsV1Entity.TABLE_NAME}"
         val renameOldTable = "ALTER TABLE $tempTableName RENAME TO ${AssetsV1Entity.TABLE_NAME}"
+        with(database) {
+            execSQL(createTempTable)
+            execSQL(copyAllValues)
+            execSQL(dropOldTable)
+            execSQL(renameOldTable)
+        }
+    }
+
+    private fun migrateConversationsTable(database: SupportSQLiteDatabase) {
+        val tempTableName = "ConversationsTemp"
+        val createTempTable = """
+            | CREATE TABLE $tempTableName (_id TEXT PRIMARY KEY NOT NULL, remote_id TEXT NOT NULL, name TEXT ,
+            | creator TEXT  NOT NULL, conv_type INTEGER  NOT NULL, team TEXT , is_managed INTEGER ,
+            | last_event_time INTEGER  NOT NULL, is_active INTEGER  NOT NULL, last_read INTEGER  NOT NULL,
+            | muted_status INTEGER  NOT NULL, mute_time INTEGER  NOT NULL, archived INTEGER  NOT NULL,
+            | archive_time INTEGER  NOT NULL, cleared INTEGER , generated_name TEXT NOT NULL, search_key TEXT ,
+            | unread_count INTEGER  NOT NULL, unsent_count INTEGER  NOT NULL, hidden INTEGER  NOT NULL,
+            | missed_call TEXT , incoming_knock TEXT , verified TEXT  NOT NULL, ephemeral INTEGER ,
+            | global_ephemeral INTEGER , unread_call_count INTEGER  NOT NULL, unread_ping_count INTEGER  NOT NULL,
+            | access TEXT  NOT NULL, access_role TEXT  NOT NULL, link TEXT , unread_mentions_count INTEGER  NOT NULL,
+            | unread_quote_count INTEGER  NOT NULL, receipt_mode INTEGER 
+            | )""".trimMargin()
+        val copyAllValues = "INSERT INTO $tempTableName SELECT * FROM $CONVERSATIONS_TABLE_NAME"
+        val dropOldTable = "DROP TABLE $CONVERSATIONS_TABLE_NAME"
+        val renameOldTable = "ALTER TABLE $tempTableName RENAME TO $CONVERSATIONS_TABLE_NAME"
         with(database) {
             execSQL(createTempTable)
             execSQL(copyAllValues)
