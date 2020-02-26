@@ -2,7 +2,7 @@ package com.waz.zclient.storage.db.users.migration
 
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.waz.zclient.storage.BuildConfig
+import com.waz.zclient.storage.db.assetsv1.AssetsV1Entity
 
 private const val START_VERSION = 126
 private const val END_VERSION = 127
@@ -31,11 +31,10 @@ private const val NEW_CLIENT_TYPE_KEY = "type"
 
 val USER_DATABASE_MIGRATION_126_TO_127 = object : Migration(START_VERSION, END_VERSION) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        if (BuildConfig.KOTLIN_CORE) {
-            migrateClientTable(database)
-            migrateKeyValuesTable(database)
-            migrateUserTable(database)
-        }
+        migrateClientTable(database)
+        migrateKeyValuesTable(database)
+        migrateUserTable(database)
+        migrateAssetsV1Table(database)
     }
 
     //TODO still needs determining what to do with this one.
@@ -114,6 +113,22 @@ val USER_DATABASE_MIGRATION_126_TO_127 = object : Migration(START_VERSION, END_V
             execSQL(copyUserTable)
             execSQL(dropOldTable)
             execSQL(renameTableBack)
+        }
+    }
+
+    private fun migrateAssetsV1Table(database: SupportSQLiteDatabase) {
+        val tempTableName = "AssetsTemp"
+        val createTempTable = """CREATE TABLE `$tempTableName` (
+            `_id` TEXT NOT NULL, `asset_type` TEXT, `data` TEXT, PRIMARY KEY(`_id`))
+            """.trimIndent()
+        val copyAllValues = "INSERT INTO $tempTableName SELECT * FROM ${AssetsV1Entity.TABLE_NAME}"
+        val dropOldTable = "DROP TABLE ${AssetsV1Entity.TABLE_NAME}"
+        val renameOldTable = "ALTER TABLE $tempTableName RENAME TO ${AssetsV1Entity.TABLE_NAME}"
+        with(database) {
+            execSQL(createTempTable)
+            execSQL(copyAllValues)
+            execSQL(dropOldTable)
+            execSQL(renameOldTable)
         }
     }
 }

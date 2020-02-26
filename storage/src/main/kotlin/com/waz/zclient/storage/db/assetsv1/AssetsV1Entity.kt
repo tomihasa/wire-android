@@ -3,16 +3,21 @@ package com.waz.zclient.storage.db.assetsv1
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.waz.zclient.storage.db.assetsv1.AssetsV1Entity.Companion.TABLE_NAME
 
-@Entity(tableName = "Assets")
+@Entity(tableName = TABLE_NAME)
 data class AssetsV1Entity(
     @PrimaryKey
     @ColumnInfo(name = "_id")
     val id: String,
 
     @ColumnInfo(name = "asset_type")
-    val assetType: String,
+    val assetType: String?,
 
     @ColumnInfo(name = "data")
-    val data: String
-)
+    val data: String?
+) {
+    companion object {
+        const val TABLE_NAME = "Assets"
+    }
+}
