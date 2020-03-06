@@ -6,24 +6,24 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.waz.zclient.R
 import com.waz.zclient.core.extension.replaceFragment
-import kotlinx.android.synthetic.main.activity_device_detail.*
+import kotlinx.android.synthetic.main.activity_settings_device_detail.*
 
 class SettingsDeviceDetailActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_device_detail)
+        setContentView(R.layout.activity_settings_device_detail)
         initToolbar()
         startDeviceDetailsFragment()
     }
 
     private fun startDeviceDetailsFragment() {
         val deviceId = intent.getStringExtra(DEVICE_ID_BUNDLE_KEY)
-        replaceFragment(R.id.layout_container, SettingsDeviceDetailFragment.newInstance(deviceId), false)
+        replaceFragment(R.id.deviceDetailsLayoutContainer, SettingsDeviceDetailFragment.newInstance(deviceId), false)
     }
 
     private fun initToolbar() {
-        setSupportActionBar(toolbar)
+        setSupportActionBar(deviceDetailsToolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 

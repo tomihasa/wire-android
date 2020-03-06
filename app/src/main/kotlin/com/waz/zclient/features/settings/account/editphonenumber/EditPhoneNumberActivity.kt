@@ -21,10 +21,10 @@ class EditPhoneNumberActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_phone)
-        setSupportActionBar(editPhoneActivityToolbar)
+        setSupportActionBar(editPhoneToolbar)
 
         replaceFragment(
-            R.id.editPhoneActivityFragmentContainer,
+            R.id.editPhoneLayoutContainer,
             EditPhoneNumberFragment.newInstance(phoneNumber, hasEmail),
             false
         )

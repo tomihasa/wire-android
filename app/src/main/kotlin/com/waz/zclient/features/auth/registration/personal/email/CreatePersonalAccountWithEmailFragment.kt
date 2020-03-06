@@ -55,7 +55,7 @@ class CreatePersonalAccountWithEmailFragment : Fragment(R.layout.fragment_create
             sendActivationCodeSuccessLiveData.observe(viewLifecycleOwner) {
                 val email = createPersonalAccountWithEmailEditText.text.toString()
                 replaceFragment(
-                    R.id.activityCreateAccountLayoutContainer,
+                    R.id.createAccountLayoutContainer,
                     EmailVerificationFragment.newInstance(email))
             }
             sendActivationCodeErrorLiveData.observe(viewLifecycleOwner) {

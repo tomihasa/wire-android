@@ -26,9 +26,9 @@ class SettingsSupportActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings_support)
-        setSupportActionBar(activitySettingsSupportToolbar)
+        setSupportActionBar(settingsSupportToolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        replaceFragment(R.id.activitySettingsSupportLayoutContainer, SettingsSupportFragment.newInstance(), false)
+        replaceFragment(R.id.settingsSupportLayoutContainer, SettingsSupportFragment.newInstance(), false)
     }
 
     override fun onSupportNavigateUp(): Boolean {
