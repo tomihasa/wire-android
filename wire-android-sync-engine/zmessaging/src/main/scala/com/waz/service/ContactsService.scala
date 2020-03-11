@@ -22,21 +22,17 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import android.Manifest.permission.READ_CONTACTS
 import android.content.Context
 import android.database.Cursor
-import android.database.DatabaseUtils.queryNumEntries
 import android.net.Uri
-import android.os.Build
 import android.provider.ContactsContract.DisplayNameSources._
 import android.provider.{BaseColumns, ContactsContract}
 import com.google.i18n.phonenumbers.PhoneNumberUtil
-import com.waz.log.LogSE._
 import com.waz.content.UserPreferences._
 import com.waz.content._
 import com.waz.log.BasicLogging.LogTag.DerivedLogTag
-import com.waz.model.AddressBook.ContactHashes
+import com.waz.log.LogSE._
 import com.waz.model.Contact.{ContactsDao, ContactsOnWireDao, EmailAddressesDao, PhoneNumbersDao}
 import com.waz.model._
 import com.waz.permissions.PermissionsService
-import com.waz.service.AccountsService.InForeground
 import com.waz.service.ContactsServiceImpl.UnifiedContacts
 import com.waz.sync.SyncServiceHandle
 import com.waz.threading.Threading
@@ -79,11 +75,6 @@ class ContactsServiceImpl(userId:         UserId,
   import EventContext.Implicits.global
   import Threading.Implicits.Background
   import timeouts.contacts._
-
-  accounts.accountState(userId).on(Background) {
-    case InForeground => requestUploadIfNeeded()
-    case _ =>
-  }
 
   contactsObserver.onChanged.on(Background) { _ =>
     verbose(l"contacts provider signaled change; marking contacts list for reload")
@@ -134,7 +125,6 @@ class ContactsServiceImpl(userId:         UserId,
     case true =>
       verbose(l"contact sharing allowed")
       markContactsDirty()
-      requestUploadIfNeeded()
       updateContactsAndMatches()
     case false =>
       verbose(l"contact sharing not allowed")
@@ -144,10 +134,6 @@ class ContactsServiceImpl(userId:         UserId,
   }
 
   private def shareContactsPreferred = shareContactsPref().map(teamId.isEmpty && _)
-  private def shareContactsPermissionGranted = {
-    if (teamId.isDefined) Future.successful(false)
-    else readContactsPermission.orElse(Signal.const(false)).head
-  }
 
   private lazy val readContactsPermission = permissions.allPermissions(ListSet(READ_CONTACTS))
 
@@ -210,7 +196,7 @@ class ContactsServiceImpl(userId:         UserId,
     ).map(us => (br, us))
   }
 
-  private lazy val contactsSignal: Signal[GenMap[ContactId, Contact]] = new AggregatingSignal[IndexedSeq[Contact], IndexedSeq[Contact]](contactsLoaded, initialContactsLoading, (stale, fresh) => fresh).map(_.by[ContactId, mut.HashMap](_.id))
+  private lazy val contactsSignal: Signal[GenMap[ContactId, Contact]] = new AggregatingSignal[IndexedSeq[Contact], IndexedSeq[Contact]](contactsLoaded, initialContactsLoading, (_, fresh) => fresh).map(_.by[ContactId, mut.HashMap](_.id))
 
   def contactForUser(id: UserId) = contactsOnWire.map(_.aftersets).map(_.get(id).flatMap(_.headOption)).zip(contactsSignal).map {
     case (Some(cId), contacts) => contacts.get(cId)
@@ -229,7 +215,7 @@ class ContactsServiceImpl(userId:         UserId,
   private def updateContactsAndMatches(): Future[Unit] =
     if (contactsNeedReloading.compareAndSet(true, false)) {
       def nonMatching(onWire: Vector[(UserId, ContactId)], users: GenMap[UserId, UserData], contacts: GenMap[ContactId, Contact]): GenSet[(UserId, ContactId)] =
-        onWire.iterator.filter { case (uid, cid) => users.get(uid).forall(u => u.email.isDefined || u.phone.isDefined) } .filterNot { case (uid, cid) =>
+        onWire.iterator.filter { case (uid, _) => users.get(uid).forall(u => u.email.isDefined || u.phone.isDefined) } .filterNot { case (uid, cid) =>
           users.get(uid).exists { u =>
             contacts.get(cid).exists (c => u.phone.exists(c.phoneNumbers) || u.email.exists(c.emailAddresses))
           }
@@ -264,63 +250,6 @@ class ContactsServiceImpl(userId:         UserId,
     }.recoverWithLog() else Future.successful(())
 
   def addContactsOnWire(rels: Traversable[(UserId, ContactId)]): Future[Unit] = storage(ContactsOnWireDao.insertOrIgnore(rels)(_)).future.map(_ => contactsOnWire.mutate(_ ++ rels))
-
-  private[waz] def requestUploadIfNeeded() = shareContactsPermissionGranted.flatMap {
-    case true =>
-      atMostOncePer(userId, uploadCheckInterval) {
-        verbose(l"requestUploadIfNeeded()")
-
-        def atLeastOncePerUploadMaxDelayOrOnVersionUpgrade = for {
-          timeOfLastUpload <- lastUploadTime()
-          lastVersion <- addressBookVersionOfLastUpload()
-        } yield (lastVersion forall (_ < CurrentAddressBookVersion)) || (timeOfLastUpload exists uploadMaxDelay.elapsedSince)
-
-        def atMostOncePerUploadMinDelayAndOnlyIfThereAreNewHashesIn[A](current: AddressBook) = for {
-          timeOfLastUpload <- lastUploadTime() if timeOfLastUpload exists uploadMinDelay.elapsedSince
-          prev <- previouslyUploadedAddressBook() if (current - prev).nonEmpty
-          _ <- sync postAddressBook current
-        } yield ()
-
-        for {
-          priorityUpload <- atLeastOncePerUploadMaxDelayOrOnVersionUpgrade
-          sharingEnabled <- shareContactsPreferred if sharingEnabled
-          hashes <- addressBook // will be empty & only contain self hashes if sharing is disabled
-          _ <- if (priorityUpload) sync postAddressBook hashes
-          else atMostOncePerUploadMinDelayAndOnlyIfThereAreNewHashesIn(hashes)
-        } yield ()
-      }
-    case false =>
-      Future.successful({})
-  }
-
-  private def selfUserHashes: Future[Vector[String]] =
-    for {
-      phone   <- phoneNumbers.myPhoneNumber
-      email   <- users.selfUser.map(_.email).head
-      myPhone <- users.selfUser.map(_.phone).head
-    } yield
-      withSHA2 { digest =>
-        Vector(email.map(e => digest(e.str)), myPhone.map(p => digest(p.str)), phone.filterNot(myPhone.contains).map(p => digest(p.str))).flatten
-      }
-
-  private[service] def addressBook: Future[AddressBook] = {
-    val selfUser = selfUserHashes
-    val phones = sharedPhoneNumbers(None)
-    val emails = sharedEmailAddresses(None)
-    for {
-      self <- selfUser
-      ps   <- phones
-      es   <- emails
-    } yield withSHA2 { digest =>
-      val hashes = ArrayBuffer.empty[ContactHashes]
-      (ps.keysIterator ++ es.keysIterator) foreach { k =>
-        hashes += ContactHashes(ContactId(digest(k)), mut.HashSet.empty ++ (ps.getOrElse(k, Set.empty).iterator.map(p => digest(p.str)) ++ es.getOrElse(k, Set.empty).iterator.map(e => digest(e.str))))
-      }
-      AddressBook(self, hashes).withoutDuplicates
-    }
-  }
-
-  private def previouslyUploadedAddressBook() = storage.read(AddressBook.load(_))
 
   private def sharedContacts(maybeLimit: Option[Int]): Future[IndexedSeq[Contact]] = {
     val phones = sharedPhoneNumbers(maybeLimit)
@@ -410,30 +339,10 @@ class ContactsServiceImpl(userId:         UserId,
       val cursor = context.getContentResolver.query(uri, projection.toArray, selection.orNull, null, ordering.orNull)
       if (cursor == null) sink.done
       else try {
-        val size = cursor.getCount
-
         if (cursor.moveToFirst()) while (sink.cont(cursor) && cursor.moveToNext()) ()
-
         sink.done
       } finally cursor.close()
   }(Threading.IO)
-
-  def onAddressBookUploaded(ab: AddressBook, result: Seq[(UserId, Set[ContactId])]): Future[Unit] = {
-    val pymk = result.map(_._1)
-    def onWire = result.flatIterator
-
-    verbose(l"social graph search found ${result.iterator.map(_._2.size).sum} contact(s) on wire and ${pymk.size} PYMK")
-
-    for {
-      _ <- storage(AddressBook.save(ab)(_)).future
-      _ <- storage(ContactsOnWireDao.insertOrIgnore(onWire)(_)).future
-      _ <- users.syncIfNeeded(pymk.toSet)
-      _ <- usersStorage.updateOrCreateAll2(pymk, (id, existing) => existing.getOrElse(UserData(id, "")).copy(relation = Relation.First))
-      _ <- Future(contactsOnWire.mutate(_ ++ onWire))
-      _ <- lastUploadTime := Some(now)
-      _ <- addressBookVersionOfLastUpload := Some(CurrentAddressBookVersion)
-    } yield ()
-  }
 }
 
 object ContactsServiceImpl {
@@ -461,8 +370,8 @@ object ContactsServiceImpl {
     val SortKeyPrimary = "sort_key" /*ContactsContract.ContactNameColumns.SORT_KEY_PRIMARY*/
     val SortKeyAlternative = "sort_key_alt" /*ContactsContract.ContactNameColumns.SORT_KEY_ALTERNATIVE*/
     val SortKey = SortKeyPrimary
-    val Visible = ContactsContract.ContactsColumns.IN_VISIBLE_GROUP
-    val InDefaultDirectory = ContactsContract.ContactsColumns.IN_DEFAULT_DIRECTORY
+    val Visible = "in_visible_group"/*ContactsContract.ContactsColumns.IN_VISIBLE_GROUP*/
+    val InDefaultDirectory = "in_default_directory"/*ContactsContract.ContactsColumns.IN_DEFAULT_DIRECTORY*/
   }
 
   lazy val Visible = Some(s"${Col.Visible} = 1 OR ${Col.InDefaultDirectory} = 1")
