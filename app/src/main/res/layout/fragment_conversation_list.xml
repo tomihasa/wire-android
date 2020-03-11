@@ -87,11 +87,18 @@
 
     </LinearLayout>
 
+
     <com.waz.zclient.pages.main.conversationlist.views.listview.SwipeListView
         android:id="@+id/conversation_list_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize" />
+
+    <com.waz.zclient.messages.parts.composite.ButtonContainerView
+        android:id="@+id/buttonContainerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="30dp"/>
 
     <LinearLayout
         android:id="@+id/empty_list_message"

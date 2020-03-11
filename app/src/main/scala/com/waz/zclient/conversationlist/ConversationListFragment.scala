@@ -26,8 +26,9 @@ import android.view.{LayoutInflater, View, ViewGroup}
 import android.widget.{ImageView, LinearLayout}
 import androidx.recyclerview.widget.{LinearLayoutManager, RecyclerView}
 import com.waz.content.UserPreferences
+import com.waz.model.ButtonData.{ButtonConfirmed, ButtonError, ButtonNotClicked, ButtonWaiting}
 import com.waz.model.ConversationData.ConversationType._
-import com.waz.model._
+import com.waz.model.{ButtonData, _}
 import com.waz.service.{AccountsService, ZMessaging}
 import com.waz.utils.events.{Signal, Subscription}
 import com.waz.utils.returning
@@ -40,6 +41,7 @@ import com.waz.zclient.conversationlist.views.{ArchiveTopToolbar, ConversationLi
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester
 import com.waz.zclient.log.LogUI._
 import com.waz.zclient.messages.UsersController
+import com.waz.zclient.messages.parts.composite.ButtonContainerView
 import com.waz.zclient.pages.BaseFragment
 import com.waz.zclient.pages.main.conversation.controller.IConversationScreenController
 import com.waz.zclient.pages.main.conversationlist.ConversationListAnimation
@@ -262,6 +264,16 @@ class NormalConversationFragment extends ConversationListFragment {
       v.setImageDrawable(drawable)
       drawable.setColor(Color.WHITE)
       drawable.setAlpha(102)
+    }
+
+    Option(findById[ButtonContainerView](v, R.id.buttonContainerView)).foreach { v =>
+      val messageId = MessageId.Empty
+      v.buttonsSignal ! Seq[ButtonData](
+          ButtonData(messageId, ButtonId("1"), "title1", 1, ButtonWaiting),
+          ButtonData(messageId, ButtonId("2"), "title2", 2, ButtonNotClicked),
+          ButtonData(messageId, ButtonId("3"), "title3", 3, ButtonError("error")),
+          ButtonData(messageId, ButtonId("4"), "title4", 4, ButtonConfirmed)
+      )
     }
   }
 
