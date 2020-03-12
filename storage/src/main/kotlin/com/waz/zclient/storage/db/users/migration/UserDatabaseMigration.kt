@@ -38,6 +38,7 @@ val USER_DATABASE_MIGRATION_126_TO_127 = object : Migration(126, 127) {
         //Needed in production
         migrateUserTable(database)
         createButtonsTable(database)
+        dropContactsTables(database)
     }
 
     //TODO still needs determining what to do with this one.
@@ -127,5 +128,13 @@ val USER_DATABASE_MIGRATION_126_TO_127 = object : Migration(126, 127) {
                 PRIMARY KEY(`message_id`, `button_id`)
             )""".trimIndent()
         )
+    }
+
+    private fun dropContactsTables(database: SupportSQLiteDatabase) {
+        database.execSQL("DROP TABLE IF EXISTS ContactHashes")
+        database.execSQL("DROP TABLE IF EXISTS Contacts")
+        database.execSQL("DROP TABLE IF EXISTS ContactsOnWire")
+        database.execSQL("DROP TABLE IF EXISTS PhoneNumbers")
+        database.execSQL("DROP TABLE IF EXISTS EmailAddresses")
     }
 }

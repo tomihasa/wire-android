@@ -306,7 +306,6 @@ class ZMessaging(val teamId: Option[TeamId], val clientId: ClientId, account: Ac
     new EventScheduler(
       Stage(Sequential)(
         connection.connectionEventsStage,
-        connection.contactJoinEventsStage,
         users.userUpdateEventsStage,
         users.userDeleteEventsStage,
         calling.callMessagesStage,
