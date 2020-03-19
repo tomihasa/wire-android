@@ -531,7 +531,7 @@ val USER_DATABASE_MIGRATION_126_TO_127 = object : Migration(126, 127) {
              )""".trimIndent()
 
         val copyAll = """INSERT INTO $tempTableName ($messageId, $convId, $content, $time, $rowId) 
-            | SELECT $messageId, $convId, $content, $time, $messageId FROM $originalTableName""".trimIndent()
+            SELECT $messageId, $convId, $content, $time FROM $originalTableName""".trimIndent()
         val dropOldTable = "DROP TABLE $originalTableName"
         val renameTableBack = "ALTER TABLE $tempTableName RENAME TO $originalTableName"
         with(database) {
